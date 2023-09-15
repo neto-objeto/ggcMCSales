@@ -1,0 +1,5 @@
+Z:\GMC SEG Folder\vb.net\My Applications\ggcMCSales\obj\Debug\ggcTLMReport.vbprojResolveAssemblyReference.cache
+Z:\GMC SEG Folder\vb.net\My Applications\ggcMCSales\obj\Debug\ggcTLMReport.frmOutboundCall.resources
+Z:\GMC SEG Folder\vb.net\My Applications\ggcMCSales\obj\Debug\ggcTLMReport.frmReportViewer.resources
+Z:\GMC SEG Folder\vb.net\My Applications\ggcMCSales\obj\Debug\ggcTLMReport.Resources.resources
+Z:\GMC SEG Folder\vb.net\My Applications\ggcMCSales\obj\Debug\ggcTLMReport.vbproj.GenerateResource.Cache
