@@ -255,11 +255,11 @@ Public Class MCProductInquiry
         'create Kwiksearch filter
         Dim lsFilter As String
         If fbByCode Then
-            lsFilter = "a.sTransNox LIKE " & strParm(p_oApp.BranchCode & "%" & fsValue)
+            lsFilter = "a.sTransNox LIKE " & strParm(p_oApp.BranchCode & "%" & fsValue & "%")
         Else
-            lsFilter = "a.sCompnyNm like " & strParm(fsValue & "%")
+            lsFilter = "b.sCompnyNm like " & strParm(fsValue & "%")
         End If
-
+        Debug.Print(lsSQL)
         Dim loDta As DataRow = KwikSearch(p_oApp _
                                         , lsSQL _
                                         , False _
