@@ -315,22 +315,14 @@ endProc:
                       , Optional ByVal fbByCode As Boolean = False) As Boolean
 
         Dim lsSQL As String
+        If String.IsNullOrEmpty(fsValue) Then
+            MsgBox("Please enter a input a value to perform the search." & _
+                 vbCrLf & "Name or Mobile Number required for search.", vbCritical, "Warning")
+            GoTo endProc
 
-        'Check if already loaded base on edit mode
-        'If p_nEditMode = xeEditMode.MODE_READY Or p_nEditMode = xeEditMode.MODE_UPDATE Then
-        '    If fbByCode Then
-        '        If fsValue = p_oDTMstr(0).Item("sMobileNo") Then Return True
-        '    Else
-        '        If fsValue = p_oCallInfosx.xClientNmeCallInfo Then Return True
-        '    End If
-        'End If
+        End If
 
-        'Initialize SQL filter
-        'If p_nTranStat >= 0 Then
-        '    lsSQL = AddCondition(getSQ_Browse, "ORDER BY b.sCompnyNm")
-        'Else
         lsSQL = getSQ_Browse()
-        'End If
 
         'create Kwiksearch filter
         Dim lsFilter As String
@@ -360,7 +352,9 @@ endProc:
 
             End If
             Return OpenMasterList(loDta.Item("sClientID"))
-            End If
+        End If
+endProc:
+        Exit Function
     End Function
 
     'Public Function SaveTransaction
