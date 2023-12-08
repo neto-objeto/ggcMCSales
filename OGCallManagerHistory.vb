@@ -316,7 +316,7 @@ endProc:
 
         Dim lsSQL As String
         If String.IsNullOrEmpty(fsValue) Then
-            MsgBox("Please enter a input a value to perform the search." & _
+            MsgBox("Please enter a filtering keyword to perform the search." & _
                  vbCrLf & "Name or Mobile Number required for search.", vbCritical, "Warning")
             GoTo endProc
 
