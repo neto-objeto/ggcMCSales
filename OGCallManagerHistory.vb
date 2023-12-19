@@ -666,6 +666,7 @@ endProc:
         lsSQL = "SELECT a.sUserIDxx sUserIDxx" &
                     ", c.sCompnyNm sCompnyNm" &
                     ", a.sEmployNo sEmployNo" &
+                    ", a.sUserName sUserName" &
               " FROM xxxSysUser  a " &
               " LEFT JOIN Employee_Master001 b " &
               " ON a.sEmployNo = b.sEmployID " &
