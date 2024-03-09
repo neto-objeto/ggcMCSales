@@ -371,7 +371,7 @@ Public Class OGCallManager
                                         ", cTranStat = '0'" &
                                         ", sCreatedx = " & strParm(p_oApp.UserID) &
                                         ", sRemarks2 = " & strParm(p_oDTMstr(0).Item("sRemarksx")) &
-                                    " WHERE sClientID = " & strParm(p_oDTMstr(0).Item("sClientID"))
+                                    " WHERE sTransNox = " & strParm(p_oDTMstr(0).Item("sReferNox"))
                         Case "tlm_client"
                             lsSQL = "UPDATE " & lsTableNme &
                                     " SET  dFollowUp = " & datetimeParm(p_sCallDate) &
@@ -411,10 +411,10 @@ Public Class OGCallManager
                     'Set the cTranStat of this call as the transtat of the source transaction
                     Select Case LCase(lsTableNme)
                         Case "tlm_client"
-                            lsSQL = "UPDATE " & lsTableNme & _
-                                        "  SET cTranStat = " & strParm(p_oDTMstr(0).Item("cTranStat")) & _
-                                            ", sRemarksx = " & strParm(p_oDTMstr(0).Item("sRemarksx")) & _
-                                    " WHERE sClientID = " & strParm(p_oDTMstr(0).Item("sClientID"))
+                            lsSQL = "UPDATE " & lsTableNme &
+                                        "  SET cTranStat = " & strParm(p_oDTMstr(0).Item("cTranStat")) &
+                                            ", sRemarksx = " & strParm(p_oDTMstr(0).Item("sRemarksx")) &
+                                    " WHERE sTransNox = " & strParm(p_oDTMstr(0).Item("sReferNox"))
                         Case "activity_inquiry"
                             lsSQL = "UPDATE " & lsTableNme & _
                                         "  SET cTranStat = " & strParm(p_oDTMstr(0).Item("cTranStat")) & _

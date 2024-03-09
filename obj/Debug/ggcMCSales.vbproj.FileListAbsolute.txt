@@ -51,9 +51,6 @@ Z:\GMC SEG Folder\vb.net\My Applications\ggcMCSales\obj\Debug\ggcMCSales.vbproj.
 Z:\GMC SEG Folder\vb.net\My Applications\ggcMCSales\obj\Debug\ggcMCSales.dll
 Z:\GMC SEG Folder\vb.net\My Applications\ggcMCSales\obj\Debug\ggcMCSales.xml
 Z:\GMC SEG Folder\vb.net\My Applications\ggcMCSales\obj\Debug\ggcMCSales.pdb
-C:\GGC_Systems\vb.net\ggcMCSales.dll
-C:\GGC_Systems\vb.net\ggcMCSales.pdb
-C:\GGC_Systems\vb.net\ggcMCSales.xml
 C:\Users\Maynard\Documents\GitHub\ggcMCSales\obj\Debug\ggcMCSales.Resources.resources
 C:\Users\Maynard\Documents\GitHub\ggcMCSales\obj\Debug\ggcMCSales.vbproj.GenerateResource.Cache
 C:\Users\Maynard\Documents\GitHub\ggcMCSales\obj\Debug\ggcMCSales.dll
