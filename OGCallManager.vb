@@ -414,7 +414,7 @@ Public Class OGCallManager
                             lsSQL = "UPDATE " & lsTableNme &
                                         "  SET cTranStat = " & strParm(p_oDTMstr(0).Item("cTranStat")) &
                                             ", sRemarksx = " & strParm(p_oDTMstr(0).Item("sRemarksx")) &
-                                    " WHERE sTransNox = " & strParm(p_oDTMstr(0).Item("sReferNox"))
+                                    " WHERE sClientID = " & strParm(p_oDTMstr(0).Item("sReferNox"))
                         Case "activity_inquiry"
                             lsSQL = "UPDATE " & lsTableNme & _
                                         "  SET cTranStat = " & strParm(p_oDTMstr(0).Item("cTranStat")) & _
@@ -522,7 +522,7 @@ Public Class OGCallManager
         lsSQL = ""
         Select Case p_cLeadSource
             Case "0"
-                'prioritize Ganado Online
+                'prioritize Benta Online
                 lsSQL = "SELECT sTransNox, sAgentIDx" &
                         " FROM " & p_sMasTable &
                         " WHERE (cTranStat = '0'" &
@@ -671,46 +671,64 @@ processRecord:
         If p_nEditMode <> xeEditMode.MODE_READY Then Return Nothing
 
         'Please make sure that sMobileNo is Index on EACH table
-        lsSQL_MC_Inquiry = "SELECT a.dTransact, a.sRemarks1 sRemarksx, a.cTranStat, a.sTransNox, 'MC_Inquiry' sTableNme" & _
-                          " FROM MC_Product_Inquiry a" & _
-                             " LEFT JOIN Client_Mobile b ON a.sClientID = b.sClientID" & _
-                          " WHERE b.sMobileNo = " & strParm(p_oDTMstr(0).Item("sMobileNo")) & _
+        lsSQL_MC_Inquiry = "SELECT" &
+                            "  a.dTransact" &
+                            ", a.sRemarks1 sRemarksx" &
+                            ", a.cTranStat" &
+                            ", a.sTransNox" &
+                            ", 'MC_Inquiry' sTableNme" &
+                            ", CASE a.sInquiryx" &
+                                " WHEN 'WI' THEN 'WALK IN'" &
+                                " WHEN 'FB' THEN 'FACEBOOK'" &
+                                " WHEN 'WS' THEN 'WEBSITE'" &
+                                " WHEN 'BF' THEN 'BYAHENG FIESTA'" &
+                                " WHEN 'DS' THEN 'DISPLAY CARAVAN'" &
+                                " WHEN 'FS' THEN 'FREE SERVICE'" &
+                                " WHEN 'BR' THEN 'BRANCH REQUEST'" &
+                                " WHEN 'ER' THEN 'EMPLOYEE REFERRAL'" &
+                                " WHEN 'MD' THEN 'MANAGEMENT DISCOUNT'" &
+                                " ELSE ''" &
+                            " END sSourceNm" &
+                          " FROM MC_Product_Inquiry a" &
+                             " LEFT JOIN Client_Mobile b ON a.sClientID = b.sClientID" &
+                          " WHERE b.sMobileNo = " & strParm(p_oDTMstr(0).Item("sMobileNo")) &
                             " AND a.sClientID = " & strParm(p_oDTMstr(0).Item("sClientID"))
 
-        lsSQL_MC_Referral = "SELECT a.dTransact, a.sRemarksx, a.cTranStat, a.sTransNox, 'MC_Referral' sTableNme" & _
-                           " FROM MC_Referral a" & _
-                              " LEFT JOIN Client_Mobile b ON a.sClientID = b.sClientID" & _
-                           " WHERE b.sMobileNo = " & strParm(p_oDTMstr(0).Item("sMobileNo")) & _
+        lsSQL_MC_Referral = "SELECT a.dTransact, a.sRemarksx, a.cTranStat, a.sTransNox, 'MC_Referral' sTableNme, '' sSourceNm" &
+                           " FROM MC_Referral a" &
+                              " LEFT JOIN Client_Mobile b ON a.sClientID = b.sClientID" &
+                           " WHERE b.sMobileNo = " & strParm(p_oDTMstr(0).Item("sMobileNo")) &
                              " AND a.sClientID = " & strParm(p_oDTMstr(0).Item("sClientID"))
 
-        lsSQL_Call_Incoming = "SELECT a.dTransact, a.sRemarksx, a.cTranStat, a.sTransNox, 'Call_Incoming' sTableNme" & _
+        lsSQL_Call_Incoming = "SELECT a.dTransact, a.sRemarksx, a.cTranStat, a.sTransNox, 'Call_Incoming' sTableNme, '' sSourceNm" &
                              " FROM Call_Incoming a WHERE a.sMobileNo = " & strParm(p_oDTMstr(0).Item("sMobileNo"))
 
-        lsSQL_Call_Outgoing = "SELECT a.dTransact, a.sRemarksx, a.cTranStat, a.sTransNox, 'Call_Outgoing' sTableNme" & _
+        lsSQL_Call_Outgoing = "SELECT a.dTransact, a.sRemarksx, a.cTranStat, a.sTransNox, 'Call_Outgoing' sTableNme, '' sSourceNm" &
                              " FROM Call_Outgoing a WHERE a.sMobileNo = " & strParm(p_oDTMstr(0).Item("sMobileNo"))
 
-        lsSQL_SMS_Incoming = "SELECT a.dTransact, a.sMessagex sRemarksx, a.cTranStat, a.sTransNox, 'SMS_Incoming' sTableNme" & _
+        lsSQL_SMS_Incoming = "SELECT a.dTransact, a.sMessagex sRemarksx, a.cTranStat, a.sTransNox, 'SMS_Incoming' sTableNme, '' sSourceNm" &
                             " FROM SMS_Incoming a WHERE a.sMobileNo = " & strParm(p_oDTMstr(0).Item("sMobileNo"))
 
-        lsSQL_SMS_Outgoing = "SELECT a.dTransact, a.sMessagex sRemarksx, a.cTranStat, a.sTransNox, 'SMS_Outgoing' sTableNme" & _
+        lsSQL_SMS_Outgoing = "SELECT a.dTransact, a.sMessagex sRemarksx, a.cTranStat, a.sTransNox, 'SMS_Outgoing' sTableNme, '' sSourceNm" &
                             " FROM SMS_Outgoing a WHERE a.sMobileNo = " & strParm(p_oDTMstr(0).Item("sMobileNo"))
 
-        lsSQL_MC_SO_Master = "SELECT a.dTransact, a.sRemarksx sRemarksx, a.cTranStat, a.sTransNox, 'MC_SO_Master' sTableNme" & _
-                            " FROM MC_SO_Master a" & _
-                                " LEFT JOIN Client_Mobile b ON a.sClientID = b.sClientID" & _
-                            " WHERE b.sMobileNo = " & strParm(p_oDTMstr(0).Item("sMobileNo")) & _
+        lsSQL_MC_SO_Master = "SELECT a.dTransact, a.sRemarksx sRemarksx, a.cTranStat, a.sTransNox, 'MC_SO_Master' sTableNme, '' sSourceNm" &
+                            " FROM MC_SO_Master a" &
+                                " LEFT JOIN Client_Mobile b ON a.sClientID = b.sClientID" &
+                            " WHERE b.sMobileNo = " & strParm(p_oDTMstr(0).Item("sMobileNo")) &
                              " AND a.sClientID = " & strParm(p_oDTMstr(0).Item("sClientID"))
 
-        lsSQL_Activity_Inquiry = "SELECT" & _
-                                    "  a.dInquirex dTransact" & _
-                                    ", CONCAT(IFNULL(a.sColorNme, ''), ' ', IFNULL(a.sModelNme, ''), ' ', IFNULL(a.sBrandNme, '')) sRemarksx" & _
-                                    ", a.cTranStat cTranStat" & _
-                                    ", a.sInqryIDx sTransNox" & _
-                                    ", 'Activity_Inquiry' sTableNme" & _
-                            " FROM Activity_Inquiry a" & _
-                                ", Call_Outgoing b" & _
-                            " WHERE b.sReferNox = a.sInqryIDx" & _
-                                " AND b.sTransNox = " & strParm(p_oDTMstr(0).Item("sTransNox")) & _
+        lsSQL_Activity_Inquiry = "SELECT" &
+                                    "  a.dInquirex dTransact" &
+                                    ", CONCAT(IFNULL(a.sColorNme, ''), ' ', IFNULL(a.sModelNme, ''), ' ', IFNULL(a.sBrandNme, '')) sRemarksx" &
+                                    ", a.cTranStat cTranStat" &
+                                    ", a.sInqryIDx sTransNox" &
+                                    ", 'Activity_Inquiry' sTableNme" &
+                                    ",  '' sSourceNm" &
+                            " FROM Activity_Inquiry a" &
+                                ", Call_Outgoing b" &
+                            " WHERE b.sReferNox = a.sInqryIDx" &
+                                " AND b.sTransNox = " & strParm(p_oDTMstr(0).Item("sTransNox")) &
                                 " AND b.sSourceCD IN ('GBF', 'FSCU', 'DC', 'OTH')"
 
         lsSQL_MC_Credit_Application = "SELECT" &
@@ -719,6 +737,7 @@ processRecord:
                                         ", a.cTLMStatx cTranStat" &
                                         ", a.sTransNox sTransNox" &
                                         ", 'MC_Credit_Application' sTableNme" &
+                                        ", '' sSourceNm" &
                                     " FROM MC_Credit_Application a" &
                                         ", Call_Outgoing b" &
                                     " WHERE b.sReferNox = a.sTransNox" &
@@ -731,13 +750,14 @@ processRecord:
                             ", a.cTranStat" &
                             ", a.sTransNox sTransNox" &
                             ", 'Ganado_Online' sTableNme" &
+                            ", '' sSourceNm" &
                         " FROM Ganado_Online a" &
                             ", Call_Outgoing b" &
                         " WHERE b.sReferNox = a.sTransNox" &
                             " AND b.sTransNox = " & strParm(p_oDTMstr(0).Item("sTransNox")) &
                             " AND b.sSourceCD = " & strParm(pxeCOS_GANADO)
 
-        lsSQL = "SELECT dTransact, sRemarksx, cTranStat, sTransNox, sTableNme" &
+        lsSQL = "SELECT dTransact, sRemarksx, cTranStat, sTransNox, sTableNme, sSourceNm" &
                " FROM (" & lsSQL_MC_Inquiry &
                  " UNION " & lsSQL_MC_Referral &
                  " UNION " & lsSQL_Call_Incoming &
@@ -750,6 +770,7 @@ processRecord:
                  " UNION " & lsSQL_MC_Credit_Application & ") x" &
                " ORDER BY dTransact DESC"
 
+        Debug.Print(lsSQL)
         loDta = p_oApp.ExecuteQuery(lsSQL)
 
         Return loDta

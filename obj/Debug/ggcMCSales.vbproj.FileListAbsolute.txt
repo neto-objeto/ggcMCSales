@@ -57,3 +57,14 @@ C:\Users\Maynard\Documents\GitHub\ggcMCSales\obj\Debug\ggcMCSales.dll
 C:\Users\Maynard\Documents\GitHub\ggcMCSales\obj\Debug\ggcMCSales.xml
 C:\Users\Maynard\Documents\GitHub\ggcMCSales\obj\Debug\ggcMCSales.pdb
 C:\Users\Maynard\Documents\GitHub\ggcMCSales\obj\Debug\ggcMCSales.vbprojResolveAssemblyReference.cache
+C:\GGC_Systems\vb.net\ggcMCSales.dll
+C:\GGC_Systems\vb.net\ggcMCSales.pdb
+C:\GGC_Systems\vb.net\ggcMCSales.xml
+D:\Guanzon\GMC SEG Folder\vb.net\My Applications\ggcMCSales\obj\Debug\ggcMCSales.vbproj.AssemblyReference.cache
+D:\Guanzon\GMC SEG Folder\vb.net\My Applications\ggcMCSales\obj\Debug\ggcMCSales.Resources.resources
+D:\Guanzon\GMC SEG Folder\vb.net\My Applications\ggcMCSales\obj\Debug\ggcMCSales.vbproj.GenerateResource.cache
+D:\Guanzon\GMC SEG Folder\vb.net\My Applications\ggcMCSales\obj\Debug\ggcMCSales.vbproj.CoreCompileInputs.cache
+D:\Guanzon\GMC SEG Folder\vb.net\My Applications\ggcMCSales\obj\Debug\ggcMCSales.vbproj.CopyComplete
+D:\Guanzon\GMC SEG Folder\vb.net\My Applications\ggcMCSales\obj\Debug\ggcMCSales.dll
+D:\Guanzon\GMC SEG Folder\vb.net\My Applications\ggcMCSales\obj\Debug\ggcMCSales.xml
+D:\Guanzon\GMC SEG Folder\vb.net\My Applications\ggcMCSales\obj\Debug\ggcMCSales.pdb
