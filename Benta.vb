@@ -399,6 +399,7 @@ Public Class Benta
 
         Dim loDT As DataTable
         loDT = New DataTable
+        Debug.Print(lsSQL)
         loDT = p_oApp.ExecuteQuery(lsSQL)
 
         If loDT.Rows.Count = 0 Then
@@ -682,14 +683,19 @@ Public Class Benta
         End If
 
         Debug.Print(lsSQL)
-        Dim loDta As DataRow = KwikSearch(p_oApp _
-                                        , lsSQL _
-                                        , False _
-                                        , lsFilter _
-                                        , "sClientNm»dCreatedx»xTranStat" _
-                                        , "Client»Date»Status",
-                                        , "a.sClientNm»a.dCreatedx»xTranStat" _
-                                        , IIf(fbByCode, 1, 2))
+        Dim loDT As DataTable = p_oApp.ExecuteQuery(AddCondition(lsSQL, lsFilter))
+
+        Dim loDta As DataRow = KwikSearch()
+
+
+        'Dim loDta As DataRow = KwikSearch(p_oApp _
+        '                                , lsSQL _
+        '                                , False _
+        '                                , lsFilter _
+        '                                , "sClientNm»dCreatedx»xTranStat" _
+        '                                , "Client»Date»Status",
+        '                                , "a.sClientNm»a.dCreatedx»xTranStat" _
+        '                                , IIf(fbByCode, 1, 2))
 
         If IsNothing(loDta) Then
             p_nEditMode = xeEditMode.MODE_UNKNOWN
