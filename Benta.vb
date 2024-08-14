@@ -323,7 +323,7 @@ Public Class Benta
         Get
             If p_nEditMode <> xeEditMode.MODE_UNKNOWN Then
                 Select Case LCase(Index)
-                    Case "stransnox", "dtransact", "sclientnm", "dtargetxx", "dfollowup", "sremarksx", "sreferdby", "dcreatedx", "nlatitude", "nlongitud", "sclientid", "stlmagent", "smobileno", "semailadd"
+                    Case "stransnox", "dtransact", "sclientnm", "dtargetxx", "dfollowup", "sremarksx", "sreferdby", "dcreatedx", "nlatitude", "nlongitud", "sclientid", "stlmagent", "smobileno", "semailadd", "xrefernme"
                         Return p_oDTMstr(0).Item(Index)
                     Case "cganadotp"
                         Return p_oDTMstr(0).Item("xGanadoTp")
@@ -377,9 +377,9 @@ Public Class Benta
 
         lsSQL = AddCondition(lsSQL, "a.cTranStat = '0' AND ISNULL(a.sTLMAgent)")
 
-        If LCase(p_oApp.ProductID = "telemktg") Then
+        If LCase(p_oApp.ProductID) = "telemktg" Then
             lsSQL = AddCondition(getSQ_Master, "a.cPaymForm = '0'")
-        ElseIf LCase(p_oApp.ProductID = "lrtrackr") Then
+        ElseIf LCase(p_oApp.ProductID) = "lrtrackr" Then
             lsSQL = AddCondition(getSQ_Master, "a.cPaymForm = '1'")
         Else
             p_nEditMode = xeEditMode.MODE_UNKNOWN
@@ -399,6 +399,7 @@ Public Class Benta
 
         Dim loDT As DataTable
         loDT = New DataTable
+        Debug.Print(lsSQL)
         loDT = p_oApp.ExecuteQuery(lsSQL)
 
         If loDT.Rows.Count = 0 Then
@@ -423,7 +424,7 @@ Public Class Benta
         End If
 
         If p_xPersonal.sMaidenNm = "" Then
-            MsgBox("Personal information mother's maided name must not be empty.")
+            MsgBox("Personal information mother's maiden name must not be empty.")
             Return False
         End If
 
@@ -681,14 +682,20 @@ Public Class Benta
             lsFilter = "a.sClientNm LIKE " & strParm(fsValue & "%")
         End If
 
-        Dim loDta As DataRow = KwikSearch(p_oApp _
-                                        , lsSQL _
-                                        , False _
-                                        , lsFilter _
-                                        , "sClientNm»dCreatedx»xTranStat" _
-                                        , "Client»Date»Status",
-                                        , "a.sClientNm»a.dCreatedx»xTranStat" _
-                                        , IIf(fbByCode, 1, 2))
+        Debug.Print(lsSQL)
+        Dim loDT As DataTable = p_oApp.ExecuteQuery(AddCondition(lsSQL, lsFilter))
+
+        Dim loDta As DataRow = KwikSearch()
+
+
+        'Dim loDta As DataRow = KwikSearch(p_oApp _
+        '                                , lsSQL _
+        '                                , False _
+        '                                , lsFilter _
+        '                                , "sClientNm»dCreatedx»xTranStat" _
+        '                                , "Client»Date»Status",
+        '                                , "a.sClientNm»a.dCreatedx»xTranStat" _
+        '                                , IIf(fbByCode, 1, 2))
 
         If IsNothing(loDta) Then
             p_nEditMode = xeEditMode.MODE_UNKNOWN
@@ -747,7 +754,7 @@ Public Class Benta
                     ", IFNULL(a.sCltInfoF, IFNULL(a.sCltInfox, '')) sCltInfox" +
                     ", IFNULL(a.sFinanceF, IFNULL(a.sFinancex, '')) sFinancex" +
                     ", IFNULL(a.sPrdctxxF, IFNULL(a.sPrdctInf, '')) sPrdctInf" +
-                    ", IFNULL(a.sPaymInfF, IFNULL(a.sPaymInfo, ''))] sPaymInfo" +
+                    ", IFNULL(a.sPaymInfF, IFNULL(a.sPaymInfo, '')) sPaymInfo" +
                     ", IFNULL(a.dTargetxx, '1900-01-01') dTargetxx" +
                     ", a.dFollowUp" +
                     ", a.sRemarksx" +
@@ -782,8 +789,10 @@ Public Class Benta
                     " END xGanadoTp" +
                     ", b.sMobileNo" +
                     ", b.sEmailAdd" +
+                    ", IFNULL(c.sCompnyNm, b.sUserName) xReferNme" +
                 " FROM " + p_sMasTable + " a" +
                     " LEFT JOIN App_User_Master b ON a.sReferdBy = b.sUserIDxx" +
+                    " LEFT JOIN Client_Master c ON b.sEmployNo = c.sClientID" +
                 " ORDER BY a.dCreatedx"
     End Function
 
