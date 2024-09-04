@@ -378,9 +378,9 @@ Public Class Benta
         lsSQL = AddCondition(lsSQL, "a.cTranStat = '0' AND ISNULL(a.sTLMAgent)")
 
         If LCase(p_oApp.ProductID) = "telemktg" Then
-            lsSQL = AddCondition(getSQ_Master, "a.cPaymForm = '0'")
+            lsSQL = AddCondition(getSQ_Master, "a.cPaymForm = '0' AND a.cTranStat <> '3'")
         ElseIf LCase(p_oApp.ProductID) = "lrtrackr" Then
-            lsSQL = AddCondition(getSQ_Master, "a.cPaymForm = '1'")
+            lsSQL = AddCondition(getSQ_Master, "a.cPaymForm = '1' AND a.cTranStat <> '3'")
         Else
             p_nEditMode = xeEditMode.MODE_UNKNOWN
 
@@ -476,6 +476,12 @@ Public Class Benta
         Dim lsClientID As String = ""
         Dim lsClientNm As String = ""
 
+        Dim loCloud As GCloud
+
+        loCloud = New GCloud
+
+        loCloud.UserID = p_oApp.UserID
+
         p_oApp.BeginTransaction()
 
         'verified must be validated
@@ -527,11 +533,12 @@ Public Class Benta
                                     ", sModified = " + strParm(p_oApp.UserID) +
                                     ", dModified = " + datetimeParm(p_oApp.SysDate)
 
-            If p_oApp.Execute(lsSQL, "Client_Master") <= 0 Then
+            If p_oApp.ExecuteActionQuery(lsSQL) <= 0 Then
                 MsgBox("Unable to save client info.", vbCritical, "Warning")
                 p_oApp.RollBackTransaction()
                 Return False
             End If
+            loCloud.AddStatement(lsSQL, SQLCondition.xeEquals, 1, True, "Client_Master", p_oApp.BranchCode, "")
 
             lsSQL = "INSERT INTO Client_Mobile SET" +
                     "  sClientID = " + strParm(lsClientID) +
@@ -541,11 +548,12 @@ Public Class Benta
                     ", cSubscrbr = NULL" +
                     ", cRecdStat = '1'"
 
-            If p_oApp.Execute(lsSQL, "Client_Mobile") <= 0 Then
+            If p_oApp.ExecuteActionQuery(lsSQL) <= 0 Then
                 MsgBox("Unable to save client info.", vbCritical, "Warning")
                 p_oApp.RollBackTransaction()
                 Return False
             End If
+            loCloud.AddStatement(lsSQL, SQLCondition.xeEquals, 1, True, "Client_Mobile", p_oApp.BranchCode, "")
         End If
 
         Dim lsPersonal As String = ""
@@ -639,6 +647,10 @@ Public Class Benta
             lsSQL += ", sPaymInfF = '" & lsPaymentx & "'"
         End If
 
+        If (fcTranStat = "1") Then
+            lsSQL += ", sClientNm = " & strParm(lsClientNm)
+        End If
+
         lsSQL += ", cTranStat = " & strParm(fcTranStat) &
                     ", sModified = " & strParm(p_oApp.UserID) &
                     ", dModified = " & datetimeParm(p_oApp.SysDate)
@@ -650,10 +662,18 @@ Public Class Benta
             p_oApp.RollBackTransaction()
             Return False
         End If
+        loCloud.AddStatement(lsSQL, SQLCondition.xeEquals, 1, False)
 
-        p_oApp.CommitTransaction()
+        loCloud.CommitTransaction()
 
-        Return True
+        If (loCloud.Execute) Then
+            p_oApp.CommitTransaction()
+            Return True
+        Else
+            MsgBox("Unable to sumbit transaction update.", vbCritical, "Warning")
+            p_oApp.RollBackTransaction()
+            Return False
+        End If
     End Function
 
     Public Function SearchTransaction(ByVal fsValue As String _
@@ -685,17 +705,14 @@ Public Class Benta
         Debug.Print(lsSQL)
         Dim loDT As DataTable = p_oApp.ExecuteQuery(AddCondition(lsSQL, lsFilter))
 
-        Dim loDta As DataRow = KwikSearch()
-
-
-        'Dim loDta As DataRow = KwikSearch(p_oApp _
-        '                                , lsSQL _
-        '                                , False _
-        '                                , lsFilter _
-        '                                , "sClientNm»dCreatedx»xTranStat" _
-        '                                , "Client»Date»Status",
-        '                                , "a.sClientNm»a.dCreatedx»xTranStat" _
-        '                                , IIf(fbByCode, 1, 2))
+        Dim loDta As DataRow = KwikSearch(p_oApp _
+                                        , lsSQL _
+                                        , False _
+                                        , lsFilter _
+                                        , "sClientNm»dCreatedx»xTranStat" _
+                                        , "Client»Date»Status",
+                                        , "a.sClientNm»a.dCreatedx»xTranStat" _
+                                        , IIf(fbByCode, 1, 2))
 
         If IsNothing(loDta) Then
             p_nEditMode = xeEditMode.MODE_UNKNOWN
@@ -712,6 +729,7 @@ Public Class Benta
 
         lsSQL = AddCondition(getSQ_Master, "a.sTransNox = " & strParm(fsTransNox))
 
+        Debug.Print(lsSQL)
         p_oDTMstr = p_oApp.ExecuteQuery(lsSQL)
 
         If p_oDTMstr.Rows.Count <= 0 Then
@@ -751,10 +769,10 @@ Public Class Benta
                     ", a.cSourcexx" +
                     ", a.cGanadoTp" +
                     ", a.cPaymForm" +
-                    ", IFNULL(a.sCltInfoF, IFNULL(a.sCltInfox, '')) sCltInfox" +
-                    ", IFNULL(a.sFinanceF, IFNULL(a.sFinancex, '')) sFinancex" +
-                    ", IFNULL(a.sPrdctxxF, IFNULL(a.sPrdctInf, '')) sPrdctInf" +
-                    ", IFNULL(a.sPaymInfF, IFNULL(a.sPaymInfo, '')) sPaymInfo" +
+                    ", IF(IFNULL(a.sCltInfoF, '') = '', IFNULL(a.sCltInfox, ''), a.sCltInfoF) sCltInfox" +
+                    ", IF(IFNULL(a.sFinanceF, '') = '', IFNULL(a.sFinancex, ''), a.sFinanceF) sFinancex" +
+                    ", IF(IFNULL(a.sPrdctxxF, '') = '', IFNULL(a.sPrdctInf, ''), a.sPrdctxxF) sPrdctInf" +
+                    ", IF(IFNULL(a.sPaymInfF, '') = '', IFNULL(a.sPaymInfo, ''), a.sPaymInfF) sPaymInfo" +
                     ", IFNULL(a.dTargetxx, '1900-01-01') dTargetxx" +
                     ", a.dFollowUp" +
                     ", a.sRemarksx" +
