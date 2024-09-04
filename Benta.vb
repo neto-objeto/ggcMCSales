@@ -363,6 +363,7 @@ Public Class Benta
 
     Public Function PickTransaction(ByVal fsValue As String _
                                         , Optional ByVal fbByCode As Boolean = False) As Boolean
+        Dim lnRetry As Integer = 0
 
         Dim lsSQL As String = getSQ_Master()
 
@@ -403,6 +404,12 @@ Public Class Benta
         loDT = p_oApp.ExecuteQuery(lsSQL)
 
         If loDT.Rows.Count = 0 Then
+            If (lnRetry = 0) Then
+                'Call API to download updates in Ganado Online from main server
+                Dim lnRes As Integer = RMJExecute("d:\GGC_Maven_Systems", "GET_ganado_online.bat", "")
+                lnRetry += 1
+            End If
+
             p_nEditMode = xeEditMode.MODE_UNKNOWN
 
             MsgBox("No benta transaction to load at this time.", vbInformation, "Notice")
@@ -479,10 +486,12 @@ Public Class Benta
         Dim loCloud As GCloud
 
         loCloud = New GCloud
+        loCloud.ShowMessage = True
 
         loCloud.UserID = p_oApp.UserID
 
         p_oApp.BeginTransaction()
+        loCloud.BeginTransaction()
 
         'verified must be validated
         If (fcTranStat = "1") Then
@@ -663,6 +672,22 @@ Public Class Benta
             Return False
         End If
         loCloud.AddStatement(lsSQL, SQLCondition.xeEquals, 1, False)
+
+        If (fcTranStat <> "0") Then
+            lsSQL = "INSERT INTO Ganado_Online_Status_History SET" &
+                    "  sTransNox = " & strParm(GetNextCode("Ganado_Online_Status_History", "sTransNox", True, p_oApp.Connection, True, p_oApp.BranchCode)) &
+                    ", sTableNme = " & strParm(p_sMasTable) &
+                    ", cTranStat = " & strParm(fcTranStat) &
+                    ", sModified = " & strParm(p_oApp.UserID) &
+                    ", sModified = " & datetimeParm(p_oApp.SysDate)
+
+            If p_oApp.ExecuteActionQuery(lsSQL) <= 0 Then
+                MsgBox("Unable to create transaction history.", vbCritical, "Warning")
+                p_oApp.RollBackTransaction()
+                Return False
+            End If
+            loCloud.AddStatement(lsSQL, SQLCondition.xeEquals, 1, True, "Ganado_Online_Status_History", p_oApp.BranchCode, "")
+        End If
 
         loCloud.CommitTransaction()
 
