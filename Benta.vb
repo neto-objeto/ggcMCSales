@@ -363,6 +363,7 @@ Public Class Benta
 
     Public Function PickTransaction(ByVal fsValue As String _
                                         , Optional ByVal fbByCode As Boolean = False) As Boolean
+        Dim lnRetry As Integer = 0
 
         Dim lsSQL As String = getSQ_Master()
 
@@ -375,18 +376,18 @@ Public Class Benta
             End If
         End If
 
-        lsSQL = AddCondition(lsSQL, "a.cTranStat = '0' AND ISNULL(a.sTLMAgent)")
+        lsSQL = AddCondition(lsSQL, "((a.cTranStat = '0' AND IFNULL(a.sTLMAgent, '') = '') OR (a.cTranStat = '0' AND a.sTLMAgent = " & strParm(p_oApp.UserID) & "))")
 
-        If LCase(p_oApp.ProductID) = "telemktg" Then
-            lsSQL = AddCondition(getSQ_Master, "a.cPaymForm = '0'")
-        ElseIf LCase(p_oApp.ProductID) = "lrtrackr" Then
-            lsSQL = AddCondition(getSQ_Master, "a.cPaymForm = '1'")
-        Else
-            p_nEditMode = xeEditMode.MODE_UNKNOWN
+        'If LCase(p_oApp.ProductID) = "telemktg" Then
+        '    lsSQL = AddCondition(getSQ_Master, "a.cPaymForm = '0' AND a.cTranStat <> '3'")
+        'ElseIf LCase(p_oApp.ProductID) = "lrtrackr" Then
+        '    lsSQL = AddCondition(getSQ_Master, "a.cPaymForm = '1' AND a.cTranStat <> '3'")
+        'Else
+        '    p_nEditMode = xeEditMode.MODE_UNKNOWN
 
-            MsgBox("Application is not allowed to load benta transactions.", vbInformation, "Notice")
-            Return False
-        End If
+        '    MsgBox("Application is not allowed to load benta transactions.", vbInformation, "Notice")
+        '    Return False
+        'End If
 
         Dim lsFilter As String
         If fbByCode Then
@@ -398,11 +399,20 @@ Public Class Benta
         lsSQL += " LIMIT 1"
 
         Dim loDT As DataTable
+
+getGanado:
         loDT = New DataTable
         Debug.Print(lsSQL)
         loDT = p_oApp.ExecuteQuery(lsSQL)
 
         If loDT.Rows.Count = 0 Then
+            If (lnRetry = 0) Then
+                'Call API to download updates in Ganado Online from main server
+                Dim lnRes As Integer = RMJExecute("d:\GGC_Maven_Systems", "GET_ganado_online.bat", "")
+                lnRetry += 1
+                GoTo getGanado
+            End If
+
             p_nEditMode = xeEditMode.MODE_UNKNOWN
 
             MsgBox("No benta transaction to load at this time.", vbInformation, "Notice")
@@ -423,28 +433,28 @@ Public Class Benta
             Return False
         End If
 
-        If p_xPersonal.sMaidenNm = "" Then
-            MsgBox("Personal information mother's maiden name must not be empty.")
-            Return False
-        End If
+        'If p_xPersonal.sMaidenNm = "" Then
+        '    MsgBox("Personal information mother's maiden name must not be empty.")
+        '    Return False
+        'End If
 
         If p_xPersonal.dBirthDte = "" Then
-            MsgBox("Personal information birthday must not be null.")
+            MsgBox("Customer birthday must not be null.")
             Return False
         End If
 
         If p_xPersonal.sBirthPlc = "" Then
-            MsgBox("Personal information birth place must not be empty.")
+            MsgBox("Customer birth place must not be empty.")
             Return False
         End If
 
         If p_xPersonal.sAddressx = "" Then
-            MsgBox("Personal address must not be empty.")
+            MsgBox("Customer address must not be empty.")
             Return False
         End If
 
         If p_xPersonal.sTownIDxx = "" Then
-            MsgBox("Personal town/city must not be empty.")
+            MsgBox("Customer town/city must not be empty.")
             Return False
         End If
 
@@ -476,15 +486,26 @@ Public Class Benta
         Dim lsClientID As String = ""
         Dim lsClientNm As String = ""
 
-        p_oApp.BeginTransaction()
+        Dim loCloud As GCloud
+
+        loCloud = New GCloud
+        loCloud.ShowMessage = True
+
+        loCloud.UserID = p_oApp.UserID
 
         'verified must be validated
         If (fcTranStat = "1") Then
             If Not isEntryOK() Then Return False
 
-            lsClientID = GetNextCode("Client_Master", "sClientID", True, p_oApp.Connection, True, p_oApp.BranchCode)
+            p_oApp.BeginTransaction()
+            loCloud.BeginTransaction()
 
-            lsSQL = "INSERT INTO Client_Master SET " +
+            lsClientID = p_oDTMstr(0)("sClientID")
+
+            If lsClientID = "" Then
+                lsClientID = GetNextCode("Client_Master", "sClientID", True, p_oApp.Connection, True, p_oApp.BranchCode)
+
+                lsSQL = "INSERT INTO Client_Master SET " +
                                     "  sClientID = " + strParm(lsClientID) +
                                     ", sLastName = " + strParm(p_xPersonal.sLastName) +
                                     ", sFrstName = " + strParm(p_xPersonal.sFrstName) +
@@ -526,26 +547,80 @@ Public Class Benta
                                     ", cRecdStat = '1'" +
                                     ", sModified = " + strParm(p_oApp.UserID) +
                                     ", dModified = " + datetimeParm(p_oApp.SysDate)
+                If p_oApp.ExecuteActionQuery(lsSQL) <= 0 Then
+                    MsgBox("Unable to save client info.", vbCritical, "Warning")
+                    p_oApp.RollBackTransaction()
+                    Return False
+                End If
+                loCloud.AddStatement(lsSQL, SQLCondition.xeEquals, 1, True, "Client_Master", p_oApp.BranchCode, "")
 
-            If p_oApp.Execute(lsSQL, "Client_Master") <= 0 Then
-                MsgBox("Unable to save client info.", vbCritical, "Warning")
-                p_oApp.RollBackTransaction()
-                Return False
+                lsSQL = "INSERT INTO Client_Mobile SET" +
+                        "  sClientID = " + strParm(lsClientID) +
+                        ", nEntryNox = '1'" +
+                        ", sMobileNo = " + strParm(p_xPersonal.sMobileNo) +
+                        ", nPriority = 1" +
+                        ", cSubscrbr = NULL" +
+                        ", cRecdStat = '1'"
+
+                If p_oApp.ExecuteActionQuery(lsSQL) <= 0 Then
+                    MsgBox("Unable to save client info.", vbCritical, "Warning")
+                    p_oApp.RollBackTransaction()
+                    Return False
+                End If
+                loCloud.AddStatement(lsSQL, SQLCondition.xeEquals, 1, True, "Client_Mobile", p_oApp.BranchCode, "")
+            Else
+                lsSQL = "UPDATE Client_Master SET " +
+                                    "  sLastName = " + strParm(p_xPersonal.sLastName) +
+                                    ", sFrstName = " + strParm(p_xPersonal.sFrstName) +
+                                    ", sMiddName = " + strParm(p_xPersonal.sMiddName) +
+                                    ", sMaidenNm = " + strParm(p_xPersonal.sMiddName) +
+                                    ", sSuffixNm = " + strParm(p_xPersonal.sSuffixNm) +
+                                    ", cGenderCd = " + strParm(p_xPersonal.cGenderCd) +
+                                    ", cCvilStat = '0'" +
+                                    ", sCitizenx = '01'" +
+                                    ", dBirthDte = " + dateParm(p_xPersonal.dBirthDte) +
+                                    ", sBirthPlc = " + strParm(p_xPersonal.sBirthPlc) +
+                                    ", sHouseNox = " + strParm(p_xPersonal.sHouseNox) +
+                                    ", sAddressx = " + strParm(p_xPersonal.sAddressx) +
+                                    ", sTownIDxx = " + strParm(p_xPersonal.sTownIDxx) +
+                                    ", sBrgyIDxx = ''" +
+                                    ", sPhoneNox = ''" +
+                                    ", sMobileNo = " + strParm(p_xPersonal.sMobileNo) +
+                                    ", sEmailAdd = " + strParm(p_xPersonal.sEmailAdd) +
+                                    ", cEducLevl = '6'" +
+                                    ", sRelgnIDx = ''" +
+                                    ", sTaxIDNox = ''" +
+                                    ", sSSSNoxxx = ''" +
+                                    ", sAddlInfo = ''" +
+                                    ", sCompnyNm = " + strParm(lsClientNm) +
+                                    ", sOccptnID = ''" +
+                                    ", sOccptnOT = ''" +
+                                    ", nGrssIncm = 0" +
+                                    ", sClientNo = ''" +
+                                    ", sSpouseID = ''" +
+                                    ", sFatherID = ''" +
+                                    ", sMotherID = ''" +
+                                    ", sSiblngID = ''" +
+                                    ", cClientTp = '0'" +
+                                    ", cLRClient = '0'" +
+                                    ", cMCClient = '0'" +
+                                    ", cSCClient = '0'" +
+                                    ", cSPClient = '0'" +
+                                    ", cCPClient = '0'" +
+                                    ", cRecdStat = '1'" +
+                                    ", sModified = " + strParm(p_oApp.UserID) +
+                                    ", dModified = " + datetimeParm(p_oApp.SysDate) &
+                        " WHERE sClientID = " + strParm(lsClientID)
+                If p_oApp.ExecuteActionQuery(lsSQL) <= 0 Then
+                    MsgBox("Unable to save client info.", vbCritical, "Warning")
+                    p_oApp.RollBackTransaction()
+                    Return False
+                End If
+                loCloud.AddStatement(lsSQL, SQLCondition.xeEquals, 1, True, "Client_Master", p_oApp.BranchCode, "")
             End If
-
-            lsSQL = "INSERT INTO Client_Mobile SET" +
-                    "  sClientID = " + strParm(lsClientID) +
-                    ", nEntryNox = '1'" +
-                    ", sMobileNo = " + strParm(p_xPersonal.sMobileNo) +
-                    ", nPriority = 1" +
-                    ", cSubscrbr = NULL" +
-                    ", cRecdStat = '1'"
-
-            If p_oApp.Execute(lsSQL, "Client_Mobile") <= 0 Then
-                MsgBox("Unable to save client info.", vbCritical, "Warning")
-                p_oApp.RollBackTransaction()
-                Return False
-            End If
+        Else
+            p_oApp.BeginTransaction()
+            loCloud.BeginTransaction()
         End If
 
         Dim lsPersonal As String = ""
@@ -639,6 +714,19 @@ Public Class Benta
             lsSQL += ", sPaymInfF = '" & lsPaymentx & "'"
         End If
 
+        If (fcTranStat = "1") Then
+            lsClientNm = p_xPersonal.sLastName & ", " & p_xPersonal.sFrstName
+
+            If p_xPersonal.sSuffixNm <> "" Then
+                lsClientNm += " " & p_xPersonal.sSuffixNm
+            End If
+
+            lsClientNm += " " & p_xPersonal.sMiddName
+            lsClientNm = Trim(lsClientNm)
+
+            lsSQL += ", sClientNm = " & strParm(lsClientNm)
+        End If
+
         lsSQL += ", cTranStat = " & strParm(fcTranStat) &
                     ", sModified = " & strParm(p_oApp.UserID) &
                     ", dModified = " & datetimeParm(p_oApp.SysDate)
@@ -650,10 +738,34 @@ Public Class Benta
             p_oApp.RollBackTransaction()
             Return False
         End If
+        loCloud.AddStatement(lsSQL, SQLCondition.xeEquals, 1, False)
 
-        p_oApp.CommitTransaction()
+        If (fcTranStat <> "0") Then
+            lsSQL = "INSERT INTO Ganado_Online_Status_History SET" &
+                    "  sTransNox = " & strParm(GetNextCode("Ganado_Online_Status_History", "sTransNox", True, p_oApp.Connection, True, p_oApp.BranchCode)) &
+                    ", sTableNme = " & strParm(p_sMasTable) &
+                    ", cTranStat = " & strParm(fcTranStat) &
+                    ", sModified = " & strParm(p_oApp.UserID) &
+                    ", dModified = " & datetimeParm(p_oApp.SysDate)
 
-        Return True
+            If p_oApp.ExecuteActionQuery(lsSQL) <= 0 Then
+                MsgBox("Unable to create transaction history.", vbCritical, "Warning")
+                p_oApp.RollBackTransaction()
+                Return False
+            End If
+            loCloud.AddStatement(lsSQL, SQLCondition.xeEquals, 1, True, "Ganado_Online_Status_History", p_oApp.BranchCode, "")
+        End If
+
+        loCloud.CommitTransaction()
+
+        If (loCloud.Execute) Then
+            p_oApp.CommitTransaction()
+            Return True
+        Else
+            MsgBox("Unable to sumbit transaction update.", vbCritical, "Warning")
+            p_oApp.RollBackTransaction()
+            Return False
+        End If
     End Function
 
     Public Function SearchTransaction(ByVal fsValue As String _
@@ -685,17 +797,14 @@ Public Class Benta
         Debug.Print(lsSQL)
         Dim loDT As DataTable = p_oApp.ExecuteQuery(AddCondition(lsSQL, lsFilter))
 
-        Dim loDta As DataRow = KwikSearch()
-
-
-        'Dim loDta As DataRow = KwikSearch(p_oApp _
-        '                                , lsSQL _
-        '                                , False _
-        '                                , lsFilter _
-        '                                , "sClientNm»dCreatedx»xTranStat" _
-        '                                , "Client»Date»Status",
-        '                                , "a.sClientNm»a.dCreatedx»xTranStat" _
-        '                                , IIf(fbByCode, 1, 2))
+        Dim loDta As DataRow = KwikSearch(p_oApp _
+                                        , lsSQL _
+                                        , False _
+                                        , lsFilter _
+                                        , "sClientNm»dCreatedx»xTranStat" _
+                                        , "Client»Date»Status",
+                                        , "a.sClientNm»a.dCreatedx»xTranStat" _
+                                        , IIf(fbByCode, 1, 2))
 
         If IsNothing(loDta) Then
             p_nEditMode = xeEditMode.MODE_UNKNOWN
@@ -712,6 +821,7 @@ Public Class Benta
 
         lsSQL = AddCondition(getSQ_Master, "a.sTransNox = " & strParm(fsTransNox))
 
+        Debug.Print(lsSQL)
         p_oDTMstr = p_oApp.ExecuteQuery(lsSQL)
 
         If p_oDTMstr.Rows.Count <= 0 Then
@@ -751,10 +861,10 @@ Public Class Benta
                     ", a.cSourcexx" +
                     ", a.cGanadoTp" +
                     ", a.cPaymForm" +
-                    ", IFNULL(a.sCltInfoF, IFNULL(a.sCltInfox, '')) sCltInfox" +
-                    ", IFNULL(a.sFinanceF, IFNULL(a.sFinancex, '')) sFinancex" +
-                    ", IFNULL(a.sPrdctxxF, IFNULL(a.sPrdctInf, '')) sPrdctInf" +
-                    ", IFNULL(a.sPaymInfF, IFNULL(a.sPaymInfo, '')) sPaymInfo" +
+                    ", IF(IFNULL(a.sCltInfoF, '') = '', IFNULL(a.sCltInfox, ''), a.sCltInfoF) sCltInfox" +
+                    ", IF(IFNULL(a.sFinanceF, '') = '', IFNULL(a.sFinancex, ''), a.sFinanceF) sFinancex" +
+                    ", IF(IFNULL(a.sPrdctxxF, '') = '', IFNULL(a.sPrdctInf, ''), a.sPrdctxxF) sPrdctInf" +
+                    ", IF(IFNULL(a.sPaymInfF, '') = '', IFNULL(a.sPaymInfo, ''), a.sPaymInfF) sPaymInfo" +
                     ", IFNULL(a.dTargetxx, '1900-01-01') dTargetxx" +
                     ", a.dFollowUp" +
                     ", a.sRemarksx" +
