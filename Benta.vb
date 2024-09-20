@@ -433,28 +433,28 @@ getGanado:
             Return False
         End If
 
-        If p_xPersonal.sMaidenNm = "" Then
-            MsgBox("Personal information mother's maiden name must not be empty.")
-            Return False
-        End If
+        'If p_xPersonal.sMaidenNm = "" Then
+        '    MsgBox("Personal information mother's maiden name must not be empty.")
+        '    Return False
+        'End If
 
         If p_xPersonal.dBirthDte = "" Then
-            MsgBox("Personal information birthday must not be null.")
+            MsgBox("Customer birthday must not be null.")
             Return False
         End If
 
         If p_xPersonal.sBirthPlc = "" Then
-            MsgBox("Personal information birth place must not be empty.")
+            MsgBox("Customer birth place must not be empty.")
             Return False
         End If
 
         If p_xPersonal.sAddressx = "" Then
-            MsgBox("Personal address must not be empty.")
+            MsgBox("Customer address must not be empty.")
             Return False
         End If
 
         If p_xPersonal.sTownIDxx = "" Then
-            MsgBox("Personal town/city must not be empty.")
+            MsgBox("Customer town/city must not be empty.")
             Return False
         End If
 
