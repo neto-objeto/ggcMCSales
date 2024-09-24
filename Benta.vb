@@ -101,6 +101,8 @@ Public Class Benta
                             Return .sMobileNo
                         Case "semailadd"
                             Return .sEmailAdd
+                        Case "srelatnid"
+                            Return getRelation(p_oDTMstr(0)("sRelatnID"),, True)
                         Case Else
                             Return vbEmpty
                     End Select
@@ -152,6 +154,8 @@ Public Class Benta
                     Case "semailadd"
                         .sEmailAdd = value
                         RaiseEvent PersonalRetreived(13, .sEmailAdd)
+                    Case "srelatnid"
+                        RaiseEvent PersonalRetreived(14, getRelation(value, True, False))
                 End Select
             End With
         End Set
@@ -334,6 +338,7 @@ Public Class Benta
                     Case "cpaymform"
                         Return p_oDTMstr(0).Item("cPaymForm")
                     Case "srelatnid"
+                        Return p_oDTMstr(0).Item("sRelatnID")
                     Case "scltinfox"
                         Return vbEmpty
                     Case "sfinancex"
@@ -455,6 +460,11 @@ getGanado:
 
         If p_xPersonal.sTownIDxx = "" Then
             MsgBox("Customer town/city must not be empty.")
+            Return False
+        End If
+
+        If p_oDTMstr(0)("sRelatnID") = "" Then
+            MsgBox("Customer relation to agent must not be empty.")
             Return False
         End If
 
@@ -696,6 +706,7 @@ getGanado:
 
         lsSQL = "UPDATE " & p_sMasTable & " SET " &
                     "  cPaymForm = " & strParm(p_oDTMstr(0).Item("cPaymForm")) &
+                    ", sRelatnID = " & strParm(p_oDTMstr(0).Item("sRelatnID")) &
                     ", sClientID = " & strParm(lsClientID)
 
         If lsPersonal <> "" Then
@@ -943,6 +954,7 @@ getGanado:
                 " WHERE a.sColorIDx = b.sColorIDx" +
                     " AND b.sModelIDx = " + strParm(p_xPrdctInf.sModelIDx) +
                     " AND b.sBranchCd IN ('M0W1', 'M029')" +
+                    " AND a.cRecdStat = '1'" +
                 " GROUP BY a.sColorIDx"
     End Function
 
@@ -952,10 +964,17 @@ getGanado:
                     ", a.sTownName" +
                     ", b.sProvName" +
                 " FROM TownCity a" +
-                    " LEFT JOIN Province b ON a.sProvIDxx = b.sProvIDxx"
+                    " LEFT JOIN Province b ON a.sProvIDxx = b.sProvIDxx" &
+                " WHERE a.cRecdStat = '1'"
     End Function
 
-
+    Private Function getSQ_Relation() As String
+        Return "SELECT" &
+                    "  sRelatnID" &
+                    ", sRelatnDs" &
+                " FROM Relation" &
+                " WHERE cRecdStat = '1'"
+    End Function
 
     Private Sub json_decode(ByVal foJSONObject As Object,
                             ByVal fsJSONValue As String)
@@ -1272,6 +1291,70 @@ endProc:
 endWithClear:
         sValue = ""
         getTown = ""
+        GoTo endProc
+errProc:
+        MsgBox(Err.Description)
+    End Function
+
+    Private Function getRelation(ByRef sValue As String,
+                                Optional ByVal bSearch As Boolean = False,
+                                Optional ByVal bByCode As Boolean = False) As String
+        Dim lsCondition As String
+        Dim lsProcName As String
+        Dim lsSQL As String
+        Dim loDataRow As DataRow
+
+        lsProcName = "getRelation"
+
+        lsCondition = String.Empty
+
+        If sValue <> String.Empty Then
+            If bByCode = False Then
+                If bSearch Then
+                    lsCondition = "sRelatnDs LIKE " & strParm("%" & sValue & "%")
+                Else
+                    lsCondition = "sRelatnDs = " & strParm(sValue)
+                End If
+            Else
+                lsCondition = "sRelatnID = " & strParm(sValue)
+            End If
+        ElseIf bSearch = False Then
+            GoTo endWithClear
+        End If
+
+        lsSQL = AddCondition(getSQ_Relation, lsCondition)
+
+        Dim loDT As DataTable
+        loDT = New DataTable
+        loDT = p_oApp.ExecuteQuery(lsSQL)
+
+        If loDT.Rows.Count = 0 Then
+            GoTo endWithClear
+        ElseIf loDT.Rows.Count = 1 Then
+            p_oDTMstr(0)("sRelatnID") = loDT(0)("sRelatnID")
+            getRelation = loDT(0)("sRelatnDs")
+        Else
+            loDataRow = KwikSearch(p_oApp,
+                                lsSQL,
+                                "",
+                                "sRelatnID»sRelatnDs",
+                                "ID»Description",
+                                "",
+                                "sRelatnID»sRelatnDs",
+                                1)
+
+            If Not IsNothing(loDataRow) Then
+                p_oDTMstr(0)("sRelatnID") = loDataRow("sRelatnID")
+                getRelation = loDataRow("sRelatnDs")
+            Else : GoTo endWithClear
+            End If
+        End If
+        loDT = Nothing
+endProc:
+        Exit Function
+endWithClear:
+        p_oDTMstr(0)("sRelatnID") = ""
+        getRelation = ""
         GoTo endProc
 errProc:
         MsgBox(Err.Description)
