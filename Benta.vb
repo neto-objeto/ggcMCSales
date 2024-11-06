@@ -448,10 +448,10 @@ getGanado:
             Return False
         End If
 
-        If p_xPersonal.sBirthPlc = "" Then
-            MsgBox("Customer birth place must not be empty.")
-            Return False
-        End If
+        'If p_xPersonal.sBirthPlc = "" Then
+        '    MsgBox("Customer birth place must not be empty.")
+        '    Return False
+        'End If
 
         If p_xPersonal.sAddressx = "" Then
             MsgBox("Customer address must not be empty.")
