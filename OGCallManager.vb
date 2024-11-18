@@ -519,139 +519,160 @@ Public Class OGCallManager
                 lsCondition = " AND cSubscrbr = " & strParm(p_cSubscriber)
         End Select
 
-        lsSQL = ""
-        Select Case p_cLeadSource
-            Case "0"
-                'prioritize Benta Online
-                lsSQL = "SELECT sTransNox, sAgentIDx" &
-                        " FROM " & p_sMasTable &
-                        " WHERE (cTranStat = '0'" &
-                            " OR (cTranStat = '1' AND sAgentIDx = " & strParm(p_oApp.UserID) & "))" &
-                            lsCondition &
-                            " AND sSourceCd = " & strParm(pxeCOS_GANADO) &
-                        " ORDER BY cSubscrbr DESC, dTransact ASC, sTransNox ASC, cTranStat DESC, sAgentIDx DESC" &
-                        " LIMIT 1"
-                loDta = p_oApp.ExecuteQuery(lsSQL)
+getLead:
+        lsSQL = "SELECT sTransNox, sAgentIDx" &
+                " FROM " & p_sMasTable &
+                " WHERE sAgentIDx = " & strParm(p_oApp.UserID) &
+                    " AND cTranStat = '1'" &
+                    lsCondition &
+                " LIMIT 1"
 
-                'this means that the query has a result, proceed to data processing
-                If loDta.Rows.Count > 0 Then GoTo processRecord
+        loDta = p_oApp.ExecuteQuery(lsSQL)
 
-                'prioritize MC Credit Application
-                lsSQL = "SELECT sTransNox, sAgentIDx" &
-                        " FROM " & p_sMasTable &
-                        " WHERE (cTranStat = '0'" &
-                            " OR (cTranStat = '1' AND sAgentIDx = " & strParm(p_oApp.UserID) & "))" &
-                            lsCondition &
-                            " AND sSourceCd = " & strParm(pxeCOS_CA) &
-                        " ORDER BY cSubscrbr DESC, dTransact ASC, sTransNox ASC, cTranStat DESC, sAgentIDx DESC" &
-                        " LIMIT 1"
-                loDta = p_oApp.ExecuteQuery(lsSQL)
-
-                'this means that the query has a result, proceed to data processing
-                If loDta.Rows.Count > 0 Then GoTo processRecord
-
-                '2nd priority, the MC Inquiry on leads to pick
-                lsSQL = "SELECT sTransNox, sAgentIDx" &
-                        " FROM " & p_sMasTable &
-                        " WHERE (cTranStat = '0'" &
-                            " OR (cTranStat = '1' AND sAgentIDx = " & strParm(p_oApp.UserID) & "))" &
-                            lsCondition &
-                            " AND sSourceCd = " & strParm(pxeCOS_INQUIRY) &
-                        " ORDER BY cSubscrbr DESC, dTransact ASC, sTransNox ASC, cTranStat DESC, sAgentIDx DESC" &
-                        " LIMIT 1"
-                loDta = p_oApp.ExecuteQuery(lsSQL)
-
-                'this means that the query has a result, proceed to data processing
-                If loDta.Rows.Count > 0 Then GoTo processRecord
-
-                'least priority other lead source
-                lsSQL = "SELECT sTransNox, sAgentIDx" &
-                        " FROM " & p_sMasTable &
-                        " WHERE (cTranStat = '0'" &
-                            " OR (cTranStat = '1' AND sAgentIDx = " & strParm(p_oApp.UserID) & "))" &
-                            lsCondition &
-                            " AND sSourceCd NOT IN ('" & pxeCOS_LENDING &
-                                                "', '" & pxeCOS_MCSALES &
-                                                "', '" & pxeCOS_CA &
-                                                "', '" & pxeCOS_INQUIRY &
-                                                "', '" & pxeCOS_MPINQR & "')" &
-                        " ORDER BY cSubscrbr DESC, dTransact ASC, sTransNox ASC, cTranStat DESC, sAgentIDx DESC" &
-                        " LIMIT 1"
-                loDta = p_oApp.ExecuteQuery(lsSQL)
-            Case "1"
-                lsSQL = "SELECT sTransNox, sAgentIDx" &
-                        " FROM " & p_sMasTable &
-                        " WHERE (cTranStat = '0'" &
-                            " OR (cTranStat = '1' AND sAgentIDx = " & strParm(p_oApp.UserID) & "))" &
-                            lsCondition &
-                            " AND sSourceCd = " & strParm(pxeCOS_LENDING) &
-                        " ORDER BY cSubscrbr DESC, dTransact ASC, sTransNox ASC, cTranStat DESC, sAgentIDx DESC" &
-                        " LIMIT 1"
-
-                loDta = p_oApp.ExecuteQuery(lsSQL)
-            Case "2"
-                'prioritize the MP Inquiry on leads to pick
-                lsSQL = "SELECT sTransNox, sAgentIDx" &
-                        " FROM " & p_sMasTable &
-                        " WHERE (cTranStat = '0'" &
-                            " OR (cTranStat = '1' AND sAgentIDx = " & strParm(p_oApp.UserID) & "))" &
-                            lsCondition &
-                            " AND sSourceCd = " & strParm(pxeCOS_MPINQR) &
-                        " ORDER BY cSubscrbr DESC, dTransact ASC, sTransNox ASC, cTranStat DESC, sAgentIDx DESC" &
-                        " LIMIT 1"
-                loDta = p_oApp.ExecuteQuery(lsSQL)
-
-                'this means that the query has a result, proceed to data processing
-                If loDta.Rows.Count > 0 Then GoTo processRecord
-
-                'second pick the leads from MC Sales
-                lsSQL = "SELECT sTransNox, sAgentIDx" &
-                        " FROM " & p_sMasTable &
-                        " WHERE (cTranStat = '0'" &
-                            " OR (cTranStat = '1' AND sAgentIDx = " & strParm(p_oApp.UserID) & "))" &
-                            lsCondition &
-                            " AND sSourceCd = " & strParm(pxeCOS_MCSALES) &
-                        " ORDER BY cSubscrbr DESC, dTransact ASC, sTransNox ASC, cTranStat DESC, sAgentIDx DESC" &
-                        " LIMIT 1"
-                loDta = p_oApp.ExecuteQuery(lsSQL)
-            Case "3"
-                lsSQL = "SELECT sTransNox, sAgentIDx" &
-                        " FROM " & p_sMasTable &
-                        " WHERE (cTranStat = '0'" &
-                            " OR (cTranStat = '1' AND sAgentIDx = " & strParm(p_oApp.UserID) & "))" &
-                            lsCondition &
-                            " AND sSourceCd = " & strParm(pxeCOS_CA) &
-                        " ORDER BY cSubscrbr DESC, dTransact ASC, sTransNox ASC, cTranStat DESC, sAgentIDx DESC" &
-                        " LIMIT 1"
-                loDta = p_oApp.ExecuteQuery(lsSQL)
-            Case Else
-                Return ""
-        End Select
-
-processRecord:
         If loDta.Rows.Count <= 0 Then
-            lsSQL = ""
-        Else
-            p_oApp.BeginTransaction()
-
-            If IFNull(loDta(0).Item("sAgentIDx"), "") = "" Then
-                lsSQL = "UPDATE " & p_sMasTable & _
-                       " SET cTranStat = '1'" & _
-                          ", sAgentIDx = " & strParm(p_oApp.UserID) & _
-                       " WHERE sTransNox = " & strParm(loDta(0).Item("sTransNox"))
-                If p_oApp.Execute(lsSQL, p_sMasTable) = 0 Then
-                    lsSQL = ""
-                Else
-                    lsSQL = loDta(0).Item("sTransNox")
-                End If
-            Else
-                lsSQL = loDta(0).Item("sTransNox")
+            'generate leads
+            If RMJExecute("D:\GGC_Maven_Systems", "tlm_leads.bat", p_oApp.UserID & " " & p_cSubscriber) <> 0 Then
+                MsgBox("Unable to create leads at this time." & vbCrLf & vbCrLf &
+                        "Please try again later.", vbInformation, "Notice")
+                Return ""
             End If
-
-            p_oApp.CommitTransaction()
+            GoTo getLead
+        Else
+            lsSQL = loDta(0)("sTransNox")
         End If
 
-        Return lsSQL
+            '        Select Case p_cLeadSource
+            '            Case "0"
+            '                'prioritize Benta Online
+            '                lsSQL = "SELECT sTransNox, sAgentIDx" &
+            '                        " FROM " & p_sMasTable &
+            '                        " WHERE (cTranStat = '0'" &
+            '                            " OR (cTranStat = '1' AND sAgentIDx = " & strParm(p_oApp.UserID) & "))" &
+            '                            lsCondition &
+            '                            " AND sSourceCd = " & strParm(pxeCOS_GANADO) &
+            '                        " ORDER BY cSubscrbr DESC, dTransact ASC, sTransNox ASC, cTranStat DESC, sAgentIDx DESC" &
+            '                        " LIMIT 1"
+            '                loDta = p_oApp.ExecuteQuery(lsSQL)
+
+            '                'this means that the query has a result, proceed to data processing
+            '                If loDta.Rows.Count > 0 Then GoTo processRecord
+
+            '                'prioritize MC Credit Application
+            '                lsSQL = "SELECT sTransNox, sAgentIDx" &
+            '                        " FROM " & p_sMasTable &
+            '                        " WHERE (cTranStat = '0'" &
+            '                            " OR (cTranStat = '1' AND sAgentIDx = " & strParm(p_oApp.UserID) & "))" &
+            '                            lsCondition &
+            '                            " AND sSourceCd = " & strParm(pxeCOS_CA) &
+            '                        " ORDER BY cSubscrbr DESC, dTransact ASC, sTransNox ASC, cTranStat DESC, sAgentIDx DESC" &
+            '                        " LIMIT 1"
+            '                loDta = p_oApp.ExecuteQuery(lsSQL)
+
+            '                'this means that the query has a result, proceed to data processing
+            '                If loDta.Rows.Count > 0 Then GoTo processRecord
+
+            '                '2nd priority, the MC Inquiry on leads to pick
+            '                lsSQL = "SELECT sTransNox, sAgentIDx" &
+            '                        " FROM " & p_sMasTable &
+            '                        " WHERE (cTranStat = '0'" &
+            '                            " OR (cTranStat = '1' AND sAgentIDx = " & strParm(p_oApp.UserID) & "))" &
+            '                            lsCondition &
+            '                            " AND sSourceCd = " & strParm(pxeCOS_INQUIRY) &
+            '                        " ORDER BY cSubscrbr DESC, dTransact ASC, sTransNox ASC, cTranStat DESC, sAgentIDx DESC" &
+            '                        " LIMIT 1"
+            '                loDta = p_oApp.ExecuteQuery(lsSQL)
+
+            '                'this means that the query has a result, proceed to data processing
+            '                If loDta.Rows.Count > 0 Then GoTo processRecord
+
+            '                'least priority other lead source
+            '                lsSQL = "SELECT sTransNox, sAgentIDx" &
+            '                        " FROM " & p_sMasTable &
+            '                        " WHERE (cTranStat = '0'" &
+            '                            " OR (cTranStat = '1' AND sAgentIDx = " & strParm(p_oApp.UserID) & "))" &
+            '                            lsCondition &
+            '                            " AND sSourceCd NOT IN ('" & pxeCOS_LENDING &
+            '                                                "', '" & pxeCOS_MCSALES &
+            '                                                "', '" & pxeCOS_CA &
+            '                                                "', '" & pxeCOS_INQUIRY &
+            '                                                "', '" & pxeCOS_MPINQR & "')" &
+            '                        " ORDER BY cSubscrbr DESC, dTransact ASC, sTransNox ASC, cTranStat DESC, sAgentIDx DESC" &
+            '                        " LIMIT 1"
+            '                loDta = p_oApp.ExecuteQuery(lsSQL)
+            '            Case "1"
+            '                lsSQL = "SELECT sTransNox, sAgentIDx" &
+            '                        " FROM " & p_sMasTable &
+            '                        " WHERE (cTranStat = '0'" &
+            '                            " OR (cTranStat = '1' AND sAgentIDx = " & strParm(p_oApp.UserID) & "))" &
+            '                            lsCondition &
+            '                            " AND sSourceCd = " & strParm(pxeCOS_LENDING) &
+            '                        " ORDER BY cSubscrbr DESC, dTransact ASC, sTransNox ASC, cTranStat DESC, sAgentIDx DESC" &
+            '                        " LIMIT 1"
+
+            '                loDta = p_oApp.ExecuteQuery(lsSQL)
+            '            Case "2"
+            '                'prioritize the MP Inquiry on leads to pick
+            '                lsSQL = "SELECT sTransNox, sAgentIDx" &
+            '                        " FROM " & p_sMasTable &
+            '                        " WHERE (cTranStat = '0'" &
+            '                            " OR (cTranStat = '1' AND sAgentIDx = " & strParm(p_oApp.UserID) & "))" &
+            '                            lsCondition &
+            '                            " AND sSourceCd = " & strParm(pxeCOS_MPINQR) &
+            '                        " ORDER BY cSubscrbr DESC, dTransact ASC, sTransNox ASC, cTranStat DESC, sAgentIDx DESC" &
+            '                        " LIMIT 1"
+            '                loDta = p_oApp.ExecuteQuery(lsSQL)
+
+            '                'this means that the query has a result, proceed to data processing
+            '                If loDta.Rows.Count > 0 Then GoTo processRecord
+
+            '                'second pick the leads from MC Sales
+            '                lsSQL = "SELECT sTransNox, sAgentIDx" &
+            '                        " FROM " & p_sMasTable &
+            '                        " WHERE (cTranStat = '0'" &
+            '                            " OR (cTranStat = '1' AND sAgentIDx = " & strParm(p_oApp.UserID) & "))" &
+            '                            lsCondition &
+            '                            " AND sSourceCd = " & strParm(pxeCOS_MCSALES) &
+            '                        " ORDER BY cSubscrbr DESC, dTransact ASC, sTransNox ASC, cTranStat DESC, sAgentIDx DESC" &
+            '                        " LIMIT 1"
+            '                loDta = p_oApp.ExecuteQuery(lsSQL)
+            '            Case "3"
+            '                lsSQL = "SELECT sTransNox, sAgentIDx" &
+            '                        " FROM " & p_sMasTable &
+            '                        " WHERE (cTranStat = '0'" &
+            '                            " OR (cTranStat = '1' AND sAgentIDx = " & strParm(p_oApp.UserID) & "))" &
+            '                            lsCondition &
+            '                            " AND sSourceCd = " & strParm(pxeCOS_CA) &
+            '                        " ORDER BY cSubscrbr DESC, dTransact ASC, sTransNox ASC, cTranStat DESC, sAgentIDx DESC" &
+            '                        " LIMIT 1"
+            '                loDta = p_oApp.ExecuteQuery(lsSQL)
+            '            Case Else
+            '                Return ""
+            '        End Select
+
+            'processRecord:
+            '        If loDta.Rows.Count <= 0 Then
+            '            lsSQL = ""
+            '        Else
+            '            p_oApp.BeginTransaction()
+
+            '            If IFNull(loDta(0).Item("sAgentIDx"), "") = "" Then
+            '                lsSQL = "UPDATE " & p_sMasTable & _
+            '                       " SET cTranStat = '1'" & _
+            '                          ", sAgentIDx = " & strParm(p_oApp.UserID) & _
+            '                       " WHERE sTransNox = " & strParm(loDta(0).Item("sTransNox"))
+            '                If p_oApp.Execute(lsSQL, p_sMasTable) = 0 Then
+            '                    lsSQL = ""
+            '                Else
+            '                    lsSQL = loDta(0).Item("sTransNox")
+            '                End If
+            '            Else
+            '                lsSQL = loDta(0).Item("sTransNox")
+            '            End If
+
+            '            p_oApp.CommitTransaction()
+            '        End If
+
+            Return lsSQL
     End Function
 
     Public Function getHistory() As DataTable
@@ -687,6 +708,8 @@ processRecord:
                                 " WHEN 'BR' THEN 'BRANCH REQUEST'" &
                                 " WHEN 'ER' THEN 'EMPLOYEE REFERRAL'" &
                                 " WHEN 'MD' THEN 'MANAGEMENT DISCOUNT'" &
+                                " WHEN 'SR' THEN 'SUZUKI REFERRAL' " &
+                                " WHEN 'BC' THEN 'BARANGAY SALES CARAVAN'" &
                                 " ELSE ''" &
                             " END sSourceNm" &
                           " FROM MC_Product_Inquiry a" &
