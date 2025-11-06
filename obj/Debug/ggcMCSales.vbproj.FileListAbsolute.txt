@@ -68,3 +68,11 @@ D:\Guanzon\GMC SEG Folder\vb.net\My Applications\ggcMCSales\obj\Debug\ggcMCSales
 D:\Guanzon\GMC SEG Folder\vb.net\My Applications\ggcMCSales\obj\Debug\ggcMCSales.dll
 D:\Guanzon\GMC SEG Folder\vb.net\My Applications\ggcMCSales\obj\Debug\ggcMCSales.xml
 D:\Guanzon\GMC SEG Folder\vb.net\My Applications\ggcMCSales\obj\Debug\ggcMCSales.pdb
+D:\GMC_SEG_Folder\vb.netgit\ggcMCSales\obj\Debug\ggcMCSales.vbproj.AssemblyReference.cache
+D:\GMC_SEG_Folder\vb.netgit\ggcMCSales\obj\Debug\ggcMCSales.Resources.resources
+D:\GMC_SEG_Folder\vb.netgit\ggcMCSales\obj\Debug\ggcMCSales.vbproj.GenerateResource.cache
+D:\GMC_SEG_Folder\vb.netgit\ggcMCSales\obj\Debug\ggcMCSales.vbproj.CoreCompileInputs.cache
+D:\GMC_SEG_Folder\vb.netgit\ggcMCSales\obj\Debug\ggcMCSales.vbproj.Up2Date
+D:\GMC_SEG_Folder\vb.netgit\ggcMCSales\obj\Debug\ggcMCSales.dll
+D:\GMC_SEG_Folder\vb.netgit\ggcMCSales\obj\Debug\ggcMCSales.xml
+D:\GMC_SEG_Folder\vb.netgit\ggcMCSales\obj\Debug\ggcMCSales.pdb

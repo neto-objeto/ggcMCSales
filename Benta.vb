@@ -744,7 +744,10 @@ getGanado:
 
         lsSQL = AddCondition(lsSQL, "sTransNox = " & strParm(p_oDTMstr(0).Item("sTransNox")))
 
-        If p_oApp.ExecuteActionQuery(lsSQL) <= 0 Then
+
+        'If p_oApp.ExecuteActionQuery(lsSQL) <= 0 Then
+        'she 2025-11-6 para dumman sa replciationlog
+        If (p_oApp.Execute(lsSQL, p_sMasTable) <= 0) Then
             MsgBox("Unable to update transaction.", vbCritical, "Warning")
             p_oApp.RollBackTransaction()
             Return False
@@ -752,14 +755,18 @@ getGanado:
         loCloud.AddStatement(lsSQL, SQLCondition.xeEquals, 1, False)
 
         If (fcTranStat <> "0") Then
+            'she added " ReferNox = " & strParm(p_oDTMstr(0).Item("sTransNox")) 
             lsSQL = "INSERT INTO Ganado_Online_Status_History SET" &
                     "  sTransNox = " & strParm(GetNextCode("Ganado_Online_Status_History", "sTransNox", True, p_oApp.Connection, True, p_oApp.BranchCode)) &
                     ", sTableNme = " & strParm(p_sMasTable) &
+                    ", sReferNox = " & strParm(p_oDTMstr(0).Item("sTransNox")) &
                     ", cTranStat = " & strParm(fcTranStat) &
                     ", sModified = " & strParm(p_oApp.UserID) &
                     ", dModified = " & datetimeParm(p_oApp.SysDate)
 
-            If p_oApp.ExecuteActionQuery(lsSQL) <= 0 Then
+            'If p_oApp.ExecuteActionQuery(lsSQL) <= 0 Then
+            'she 2025-11-6 para dumman sa replciationlog
+            If (p_oApp.Execute(lsSQL, p_sMasTable) <= 0) Then
                 MsgBox("Unable to create transaction history.", vbCritical, "Warning")
                 p_oApp.RollBackTransaction()
                 Return False
