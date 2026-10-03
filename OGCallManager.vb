@@ -522,20 +522,53 @@ Public Class OGCallManager
 getLead:
         lsSQL = "SELECT sTransNox, sAgentIDx" &
                 " FROM " & p_sMasTable &
-                " WHERE sAgentIDx = " & strParm(p_oApp.UserID) &
-                    " AND cTranStat = '1'" &
+                " WHERE ((sAgentIDx = " & strParm(p_oApp.UserID) & " AND cTranStat = '1') OR (IFNULL(sAgentIDx, '') = '' AND cTranStat = '0'))" &
                     lsCondition &
+                " ORDER BY cTranStat DESC" & _
                 " LIMIT 1"
 
         loDta = p_oApp.ExecuteQuery(lsSQL)
 
         If loDta.Rows.Count <= 0 Then
+            Dim frmPB As frmProgress
+            frmPB = New frmProgress
+
+            frmPB.MaxValue = 100
+            frmPB.ShowTitle("Generating leads...")
+            frmPB.ShowProcess("Please wait while your request is being processed...")
+
+            frmPB.Show()
             'generate leads
-            If RMJExecute("D:\GGC_Maven_Systems", "tlm_leads.bat", p_oApp.UserID & " " & p_cSubscriber) <> 0 Then
-                MsgBox("Unable to create leads at this time." & vbCrLf & vbCrLf &
-                        "Please try again later.", vbInformation, "Notice")
-                Return ""
-            End If
+            Select Case p_cSubscriber
+                Case 1, 2 'smart and sun
+                    If RMJExecute("D:\GGC_Maven_Systems", "tlm_leads.bat", p_oApp.UserID & " " & "1") <> 0 Then
+                        frmPB.Close()
+                        MsgBox("Unable to create leads for SMART and SUN at the moment." & vbCrLf & vbCrLf &
+                                "Please try again after a few minutes.", vbInformation, "Notice")
+                        Return ""
+                    Else
+                        frmPB.Close()
+                    End If
+                Case 3 'all net calls
+                    If RMJExecute("D:\GGC_Maven_Systems", "tlm_leads.bat", p_oApp.UserID & " " & "3") <> 0 Then
+                        frmPB.Close()
+                        MsgBox("Unable to create leads for DITO, SMART and SUN at the moment." & vbCrLf & vbCrLf &
+                                "Please try again after a few minutes.", vbInformation, "Notice")
+                        Return ""
+                    Else
+                        frmPB.Close()
+                    End If
+                Case Else 'globe only
+                    If RMJExecute("D:\GGC_Maven_Systems", "tlm_leads.bat", p_oApp.UserID & " " & "0") <> 0 Then
+                        frmPB.Close()
+                        MsgBox("Unable to create leads for GLOBE at the moment." & vbCrLf & vbCrLf &
+                                "Please try again after a few minutes.", vbInformation, "Notice")
+                        Return ""
+                    Else
+                        frmPB.Close()
+                    End If
+            End Select
+
             GoTo getLead
         Else
             lsSQL = loDta(0)("sTransNox")
