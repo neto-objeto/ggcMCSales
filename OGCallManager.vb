@@ -216,7 +216,10 @@ Public Class OGCallManager
     'Public Function OpenTransaction(String)
     Public Function OpenTransaction(ByVal fsTransNox As String) As Boolean
         Dim lsSQL As String
-
+        If fsTransNox = "" Then
+            p_nEditMode = xeEditMode.MODE_UNKNOWN
+            Return False
+        End If
         lsSQL = AddCondition(getSQ_Master, "a.sTransNox = " & strParm(fsTransNox))
         p_oDTMstr = p_oApp.ExecuteQuery(lsSQL)
 
@@ -569,9 +572,26 @@ getLead:
                     End If
             End Select
 
-            GoTo getLead
+
+            lsSQL = "SELECT sTransNox, sAgentIDx" &
+                " FROM " & p_sMasTable &
+                " WHERE ((sAgentIDx = " & strParm(p_oApp.UserID) & " AND cTranStat = '1') OR (IFNULL(sAgentIDx, '') = '' AND cTranStat = '0'))" &
+                    lsCondition &
+                " ORDER BY cTranStat DESC" &
+                " LIMIT 1"
+
+            loDta = p_oApp.ExecuteQuery(lsSQL)
+
+            If loDta.Rows.Count <= 0 Then
+                'GoTo getLead
+                MsgBox("Unable to create leads at the moment." & vbCrLf & vbCrLf &
+                                "Please try again after a few minutes.", vbInformation, "Notice")
+                lsSQL = ""
+            Else
+                lsSQL = loDta(0)("sTransNox")
+            End If
         Else
-            lsSQL = loDta(0)("sTransNox")
+                lsSQL = loDta(0)("sTransNox")
         End If
 
             '        Select Case p_cLeadSource
