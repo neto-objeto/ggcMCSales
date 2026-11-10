@@ -67,11 +67,11 @@ Public Class OGCallManager
     Public Const pxeCOS_FREESERVICE As String = "FSCU"  'activity inqry fscu
     Public Const pxeCOS_DISPLAYCARAVAN As String = "DC" 'activity inqry display caravan
     Public Const pxeCOS_OTHERS As String = "OTH" 'activity inqry others
-    Public Const pxeCOS_MCSALES As String = "MCSO" 'mp leads from mc customers
+    Public Const pxeCOS_MCSALES As String = "MCSO" 'mp/appliance leads from mc customers
+    Public Const pxeCOS_CPSALES As String = "CPSO" 'mp/appliance leads from mc customers
     Public Const pxeCOS_MPINQR = "MPIn" 'mp product inquiry     
     Public Const pxeCOS_CA = "MCCA" 'credit application
     Public Const pxeCOS_GANADO = "GNDO" 'Ganado Online
-
 
     Public Event MasterRetrieved(ByVal Index As Integer, _
                                   ByVal Value As Object)
@@ -357,6 +357,10 @@ Public Class OGCallManager
                         lsTableNme = "MC_Credit_Application"
                     Case pxeCOS_GANADO
                         lsTableNme = "Ganado_Online"
+                    Case pxeCOS_MCSALES
+                        lsTableNme = "MC_SO_Master"
+                    Case pxeCOS_CPSALES
+                        lsTableNme = "CP_SO_Master"
                     Case Else 'pxeCOS_INCOMINGCALL
                         lsTableNme = "Call_Incoming"
                 End Select
@@ -394,8 +398,14 @@ Public Class OGCallManager
                                     " WHERE sTransNox = " & strParm(p_oDTMstr(0).Item("sReferNox"))
                         Case "ganado_online"
                             lsSQL = "UPDATE " & lsTableNme &
-                                    " SET  cTranStat = '1'" &
+                                    " SET  cTranStat = '0'" &
                                         ", sRemarksx = " & strParm(p_oDTMstr(0).Item("sRemarksx")) &
+                                        ", sTLMAgent = " & strParm(p_oApp.UserID) &
+                                        ", dFollowUp = " & datetimeParm(p_sCallDate) &
+                                    " WHERE sTransNox = " & strParm(p_oDTMstr(0).Item("sReferNox"))
+                        Case "mc_so_master", "cp_so_master"
+                            lsSQL = "UPDATE " & lsTableNme &
+                                    " SET  cTLMStat = '0'" &
                                         ", sTLMAgent = " & strParm(p_oApp.UserID) &
                                         ", dFollowUp = " & datetimeParm(p_sCallDate) &
                                     " WHERE sTransNox = " & strParm(p_oDTMstr(0).Item("sReferNox"))
@@ -405,7 +415,7 @@ Public Class OGCallManager
                                         ", cTranStat = '0'" &
                                         ", sAgentIDx = " & strParm(p_oApp.UserID) &
                                         ", sRemarksx = " & strParm(p_oDTMstr(0).Item("sRemarksx")) &
-                                   " WHERE sTransNox = " & strParm(p_oDTMstr(0).Item("sTransNox"))
+                                   " WHERE sTransNox = " & strParm(p_oDTMstr(0).Item("sReferNox"))
                     End Select
                 Else
                     'Set the cTranStat of this call as the transtat of the source transaction
@@ -413,31 +423,35 @@ Public Class OGCallManager
                         Case "tlm_client"
                             lsSQL = "UPDATE " & lsTableNme &
                                         "  SET cTranStat = " & strParm(p_oDTMstr(0).Item("cTranStat")) &
-                                            ", sRemarksx = " & strParm(p_oDTMstr(0).Item("sRemarksx")) &
-                                    " WHERE sClientID = " & strParm(p_oDTMstr(0).Item("sReferNox"))
+                                        ", sRemarksx = " & strParm(p_oDTMstr(0).Item("sRemarksx")) &
+                                    " WHERE sClientID = " & strParm(p_oDTMstr(0).Item("sClientID"))
                         Case "activity_inquiry"
-                            lsSQL = "UPDATE " & lsTableNme & _
-                                        "  SET cTranStat = " & strParm(p_oDTMstr(0).Item("cTranStat")) & _
-                                            ", sNotesxxx = " & strParm(p_oDTMstr(0).Item("sRemarksx")) & _
+                            lsSQL = "UPDATE " & lsTableNme &
+                                        "  SET cTranStat = " & strParm(p_oDTMstr(0).Item("cTranStat")) &
+                                        ", sNotesxxx = " & strParm(p_oDTMstr(0).Item("sRemarksx")) &
                                    " WHERE sInqryIDx = " & strParm(p_oDTMstr(0).Item("sReferNox"))
                         Case "mc_product_inquiry", "mp_product_inquiry"
-                            lsSQL = "UPDATE " & lsTableNme & _
-                                        "  SET cTranStat = " & strParm(p_oDTMstr(0).Item("cTranStat")) & _
-                                            ", sRemarks2 = " & strParm(p_oDTMstr(0).Item("sRemarksx")) & _
-                                    " WHERE sTransNox = " & strParm(p_oDTMstr(0).Item("sTransNox"))
+                            lsSQL = "UPDATE " & lsTableNme &
+                                        "  SET cTranStat = " & strParm(p_oDTMstr(0).Item("cTranStat")) &
+                                        ", sRemarks2 = " & strParm(p_oDTMstr(0).Item("sRemarksx")) &
+                                    " WHERE sTransNox = " & strParm(p_oDTMstr(0).Item("sReferNox"))
                         Case "mc_credit_application"
                             lsSQL = "UPDATE " & lsTableNme &
-                                    " SET cTLMStatx = " & strParm(p_oDTMstr(0).Item("cTranStat")) &
+                                        " SET cTLMStatx = " & strParm(p_oDTMstr(0).Item("cTranStat")) &
                                     " WHERE sTransNox = " & strParm(p_oDTMstr(0).Item("sReferNox"))
                         Case "ganado_online"
                             lsSQL = "UPDATE " & lsTableNme &
-                                    " SET cTranStat = " & strParm(p_oDTMstr(0).Item("cTranStat")) &
+                                        " SET cTranStat = " & strParm(p_oDTMstr(0).Item("cTranStat")) &
+                                    " WHERE sTransNox = " & strParm(p_oDTMstr(0).Item("sReferNox"))
+                        Case "mc_so_master", "cp_so_master"
+                            lsSQL = "UPDATE " & lsTableNme &
+                                    " SET cTLMStatx = " & strParm(p_oDTMstr(0).Item("cTranStat")) &
                                     " WHERE sTransNox = " & strParm(p_oDTMstr(0).Item("sReferNox"))
                         Case Else
-                            lsSQL = "UPDATE " & lsTableNme & _
-                                        "  SET cTranStat = " & strParm(p_oDTMstr(0).Item("cTranStat")) & _
-                                            ", sRemarksx = " & strParm(p_oDTMstr(0).Item("sRemarksx")) & _
-                                    " WHERE sTransNox = " & strParm(p_oDTMstr(0).Item("sTransNox"))
+                            lsSQL = "UPDATE " & lsTableNme &
+                                        "  SET cTranStat = " & strParm(p_oDTMstr(0).Item("cTranStat")) &
+                                            ", sRemarksx = " & strParm(p_oDTMstr(0).Item("sRemarksx")) &
+                                    " WHERE sTransNox = " & strParm(p_oDTMstr(0).Item("sReferNox"))
                     End Select
                 End If
 
@@ -515,6 +529,8 @@ Public Class OGCallManager
                 lsCondition = " AND cSubscrbr IN ('1', '2')"
             Case "3"
                 lsCondition = " AND cSubscrbr IN ('1', '2', '3')"
+            Case "4"
+                lsCondition = ""
             Case Else
                 lsCondition = " AND cSubscrbr = " & strParm(p_cSubscriber)
         End Select
@@ -551,6 +567,15 @@ getLead:
                     End If
                 Case 3 'all net calls
                     If RMJExecute("D:\GGC_Maven_Systems", "tlm_leads.bat", p_oApp.UserID & " " & "3") <> 0 Then
+                        frmPB.Close()
+                        MsgBox("Unable to create leads for DITO, SMART and SUN at the moment." & vbCrLf & vbCrLf &
+                                "Please try again after a few minutes.", vbInformation, "Notice")
+                        Return ""
+                    Else
+                        frmPB.Close()
+                    End If
+                Case 4 'appliances
+                    If RMJExecute("D:\GGC_Maven_Systems", "tlm_leads.bat", p_oApp.UserID & " " & "4") <> 0 Then
                         frmPB.Close()
                         MsgBox("Unable to create leads for DITO, SMART and SUN at the moment." & vbCrLf & vbCrLf &
                                 "Please try again after a few minutes.", vbInformation, "Notice")
